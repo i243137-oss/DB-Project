@@ -1,0 +1,111 @@
+@model IEnumerable<SmartDisasterMIS.Web.Models.EmergencyReport>
+@{
+    ViewData["Title"] = "Emergencies";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-1"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-triangle-exclamation me-2 text-danger"></i>Emergency Reports</h4>
+    <a asp-action="Create" class="btn btn-danger"><i class="fas fa-plus me-1"></i> New Report</a>
+</div>
+
+<div class="card">
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Time</th>
+                    <th>Type</th>
+                    <th>Event</th>
+                    <th>Location</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var item in Model)
+            {
+                var severityBg = item.SeverityLevel switch {
+                    "Critical" => "bg-danger",
+                    "High" => "bg-warning text-dark",
+                    "Medium" => "bg-info text-dark",
+                    _ => "bg-secondary"
+                };
+                <tr>
+                    <td class="fw-semibold">#@item.ReportId</td>
+                    <td class="text-nowrap">@item.ReportTime.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@item.DisasterType?.TypeName</td>
+                    <td>@item.DisasterEvent?.EventName</td>
+                    <td>@item.Location?.City</td>
+                    <td><span class="badge @severityBg">@item.SeverityLevel</span></td>
+                    <td>
+                        <span class="badge @(item.Status == "Resolved" ? "bg-success" : item.Status == "Assigned" ? "bg-primary" : "bg-warning text-dark")">@item.Status</span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1 flex-wrap">
+                            @if (item.Status == "Pending")
+                            {
+                                <!-- Assign Team -->
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal-@item.ReportId">
+                                    <i class="fas fa-user-plus"></i> Assign
+                                </button>
+                                <!-- Mark as Resolved -->
+                                <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                    <input type="hidden" name="reportId" value="@item.ReportId" />
+                                    <input type="hidden" name="status" value="Resolved" />
+                                    <button class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
+                                </form>
+                            }
+                            @if (item.Status == "Assigned")
+                            {
+                                <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                    <input type="hidden" name="reportId" value="@item.ReportId" />
+                                    <input type="hidden" name="status" value="Resolved" />
+                                    <button class="btn btn-sm btn-success"><i class="fas fa-check"></i> Resolve</button>
+                                </form>
+                            }
+                        </div>
+
+                        <!-- Assign Modal -->
+                        <div class="modal fade" id="assignModal-@item.ReportId" tabindex="-1">
+                            <div class="modal-dialog modal-sm">
+                                <div class="modal-content">
+                                    <div class="modal-header"><h6 class="modal-title">Assign Team to #@item.ReportId</h6></div>
+                                    <form asp-action="AssignTeam" method="post">
+                                        <div class="modal-body">
+                                            <input type="hidden" name="reportId" value="@item.ReportId" />
+                                            <select name="teamId" class="form-select" required>
+                                                <option value="">-- Select Team --</option>
+                                                @foreach (var team in ViewBag.RescueTeams)
+                                                {
+                                                    <option value="@team.TeamId">@team.TeamName</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button class="btn btn-primary btn-sm w-100"><i class="fas fa-paper-plane"></i> Assign</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="8" class="text-center text-muted py-4">No emergency reports found.</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

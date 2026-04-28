@@ -1,0 +1,146 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-danger bg-opacity-10 text-danger"><i class="fas fa-triangle-exclamation"></i></div>
+                <div>
+                    <small class="text-muted d-block">Pending Reports</small>
+                    <h4 class="mb-0 fw-bold">@(((IEnumerable<dynamic>)ViewBag.PendingReports).Count())</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning"><i class="fas fa-box-open"></i></div>
+                <div>
+                    <small class="text-muted d-block">Low Stock Items</small>
+                    <h4 class="mb-0 fw-bold">@(((IEnumerable<dynamic>)ViewBag.LowStocks).Count())</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-info bg-opacity-10 text-info"><i class="fas fa-clipboard-check"></i></div>
+                <div>
+                    <small class="text-muted d-block">Pending Approvals</small>
+                    <h4 class="mb-0 fw-bold">@(((IEnumerable<dynamic>)ViewBag.Approvals).Count())</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="fas fa-hand-holding-dollar"></i></div>
+                <div>
+                    <small class="text-muted d-block">Events Tracked</small>
+                    <h4 class="mb-0 fw-bold">@(((IEnumerable<dynamic>)ViewBag.Budgets).Count())</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-chart-bar me-1 text-primary"></i> Incidents by City</span>
+            </div>
+            <div class="card-body"><canvas id="incidentsChart" height="120"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-white"><i class="fas fa-clock-rotate-left me-1 text-warning"></i> Pending Approvals</div>
+            <div class="card-body p-0" style="max-height:300px;overflow-y:auto">
+                <ul class="list-group list-group-flush">
+                @foreach (var item in ViewBag.Approvals)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                        <div>
+                            <small class="fw-semibold">@item.RequestType</small>
+                            <br/><small class="text-muted">By @item.SubmittedBy &middot; @item.MinutesWaiting min ago</small>
+                        </div>
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    </li>
+                }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-white"><i class="fas fa-warehouse me-1 text-danger"></i> Low Stock Alerts</div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Warehouse</th><th>Resource</th><th>Available</th><th>Reorder</th><th>Shortage</th></tr></thead>
+                    <tbody>
+                    @foreach (var s in ViewBag.LowStocks)
+                    {
+                        <tr>
+                            <td>@s.WarehouseName</td>
+                            <td>@s.ResourceName</td>
+                            <td class="text-danger fw-bold">@s.QuantityAvailable</td>
+                            <td>@s.ReorderLevel</td>
+                            <td><span class="badge bg-danger">-@s.Shortage</span></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-white"><i class="fas fa-scale-balanced me-1 text-success"></i> Event Budget Summary</div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Event</th><th>Donations</th><th>Expenses</th><th>Balance</th></tr></thead>
+                    <tbody>
+                    @foreach (var b in ViewBag.Budgets)
+                    {
+                        <tr>
+                            <td>@b.EventName</td>
+                            <td class="text-success">PKR @b.TotalDonation?.ToString("N0")</td>
+                            <td class="text-danger">PKR @b.TotalExpense?.ToString("N0")</td>
+                            <td class="fw-bold">PKR @b.BudgetBalance?.ToString("N0")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        new Chart(document.getElementById('incidentsChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(ViewBag.IncidentsLabels)),
+                datasets: [{
+                    label: 'Incidents',
+                    data: @Html.Raw(Json.Serialize(ViewBag.IncidentsCounts)),
+                    backgroundColor: ['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6','#ec4899','#06b6d4','#f97316'],
+                    borderRadius: 6,
+                    barThickness: 36
+                }]
+            },
+            options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}} }
+        });
+    </script>
+}

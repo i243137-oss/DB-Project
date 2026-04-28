@@ -1,0 +1,49 @@
+/* ===== GLOBAL ===== */
+*,*::before,*::after{box-sizing:border-box}
+html{font-size:14px}
+body{font-family:'Inter',sans-serif;margin:0;background:#f0f2f5;color:#1e293b;min-height:100vh}
+
+/* ===== SIDEBAR ===== */
+.sidebar{position:fixed;top:0;left:0;width:240px;height:100vh;background:linear-gradient(180deg,#1e293b 0%,#0f172a 100%);color:#cbd5e1;display:flex;flex-direction:column;z-index:1050;transition:transform .3s ease}
+.sidebar-brand{display:flex;align-items:center;gap:10px;padding:20px 18px;font-size:1.2rem;font-weight:700;color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-brand i{font-size:1.4rem;color:#38bdf8}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 0}
+.sidebar-link{display:flex;align-items:center;gap:12px;padding:10px 20px;color:#94a3b8;text-decoration:none;font-size:.9rem;transition:all .2s ease;border-left:3px solid transparent}
+.sidebar-link:hover,.sidebar-link.active{background:rgba(56,189,248,.08);color:#fff;border-left-color:#38bdf8}
+.sidebar-link i{width:20px;text-align:center;font-size:.95rem}
+.sidebar-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,.08)}
+.sidebar-user{display:flex;align-items:center;gap:10px;color:#e2e8f0}
+
+/* ===== MAIN ===== */
+.main-content{margin-left:240px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:1000}
+.topbar-title{color:#1e293b;font-weight:600}
+.content-wrapper{padding:24px;flex:1}
+
+/* ===== CARDS ===== */
+.stat-card{border:none;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .2s ease,box-shadow .2s ease}
+.stat-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.stat-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.card{border:none;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card-header{border-radius:12px 12px 0 0 !important;font-weight:600}
+
+/* ===== TABLES ===== */
+.table{font-size:.875rem}
+.table thead th{font-weight:600;text-transform:uppercase;font-size:.75rem;letter-spacing:.5px;color:#64748b;border-bottom:2px solid #e2e8f0}
+.table-hover tbody tr:hover{background:#f8fafc}
+
+/* ===== BADGES ===== */
+.badge{font-weight:500;padding:5px 10px;border-radius:6px}
+
+/* ===== LOGIN PAGE ===== */
+.login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0f172a 100%)}
+.login-card{width:100%;max-width:420px;padding:40px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);background:rgba(255,255,255,.95);backdrop-filter:blur(10px)}
+.login-card h3{font-weight:700;color:#0f172a}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+    .sidebar{transform:translateX(-100%)}
+    .sidebar.show{transform:translateX(0)}
+    .main-content{margin-left:0}
+    .sidebar-toggle{display:block !important}
+}

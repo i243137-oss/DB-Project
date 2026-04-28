@@ -1,0 +1,121 @@
+@model IEnumerable<SmartDisasterMIS.Web.Models.Hospital>
+@{
+    ViewData["Title"] = "Hospitals";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-1"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-times-circle me-1"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-hospital me-2 text-primary"></i>Hospital Coordination</h4>
+</div>
+
+<div class="row g-3 mb-4">
+@foreach (var h in Model)
+{
+    <div class="col-md-4">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <h6 class="fw-bold">@h.HospitalName</h6>
+                <small class="text-muted"><i class="fas fa-map-marker-alt"></i> @h.Location?.City &middot; <i class="fas fa-phone"></i> @h.ContactNo</small>
+                <hr class="my-2"/>
+                <div class="d-flex justify-content-between small">
+                    <span>Total Beds</span><span class="fw-bold">@h.TotalBeds</span>
+                </div>
+                <div class="d-flex justify-content-between small">
+                    <span>Available</span><span class="fw-bold text-success">@h.AvailableBeds</span>
+                </div>
+                <div class="d-flex justify-content-between small">
+                    <span>Critical</span><span class="fw-bold text-danger">@h.CriticalCapacity</span>
+                </div>
+                <div class="progress mt-2" style="height:6px">
+                    @{
+                        var pct = h.TotalBeds > 0 ? (int)((h.TotalBeds - h.AvailableBeds) * 100.0 / h.TotalBeds) : 0;
+                        var color = pct > 80 ? "bg-danger" : pct > 50 ? "bg-warning" : "bg-success";
+                    }
+                    <div class="progress-bar @color" style="width:@(pct)%"></div>
+                </div>
+                <small class="text-muted">@pct% Occupied</small>
+
+                <!-- Admit Patient Button -->
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-primary w-100" data-bs-toggle="modal" data-bs-target="#admitModal-@h.HospitalId"
+                            @(h.AvailableBeds <= 0 ? "disabled" : "")>
+                        <i class="fas fa-user-plus"></i> Admit Patient
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admit Modal -->
+    <div class="modal fade" id="admitModal-@h.HospitalId" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header"><h6 class="modal-title">Admit to @h.HospitalName</h6></div>
+                <form asp-action="AdmitPatient" method="post">
+                    <div class="modal-body">
+                        <input type="hidden" name="hospitalId" value="@h.HospitalId" />
+                        <label class="form-label">Select Patient</label>
+                        <select name="patientId" class="form-select" required>
+                            <option value="">-- Select --</option>
+                            @foreach (var p in ViewBag.Patients)
+                            {
+                                <option value="@p.PatientId">@p.FullName (Age: @p.Age, @p.ConditionStatus)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary w-100"><i class="fas fa-check"></i> Admit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+<!-- Admissions Table -->
+<div class="card">
+    <div class="card-header bg-white"><i class="fas fa-bed me-1"></i> Recent Admissions</div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>#</th><th>Patient</th><th>Hospital</th><th>Admitted</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+            @foreach (var a in ViewBag.Admissions)
+            {
+                <tr>
+                    <td>@a.AdmissionId</td>
+                    <td>@a.Patient?.FullName</td>
+                    <td>@a.Hospital?.HospitalName</td>
+                    <td>@a.AdmitTime.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>
+                        <span class="badge @(a.Status == "Admitted" ? "bg-primary" : a.Status == "Discharged" ? "bg-success" : "bg-dark")">@a.Status</span>
+                    </td>
+                    <td>
+                        @if (a.Status == "Admitted")
+                        {
+                            <form asp-action="DischargePatient" method="post" class="d-inline">
+                                <input type="hidden" name="admissionId" value="@a.AdmissionId" />
+                                <button class="btn btn-sm btn-success"><i class="fas fa-door-open"></i> Discharge</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

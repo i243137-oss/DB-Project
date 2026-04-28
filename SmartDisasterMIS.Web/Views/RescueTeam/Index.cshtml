@@ -1,0 +1,145 @@
+@model IEnumerable<SmartDisasterMIS.Web.Models.RescueTeam>
+@{
+    ViewData["Title"] = "Rescue Teams";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-1"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-people-group me-2 text-primary"></i>Rescue Team Management</h4>
+</div>
+
+<div class="row g-3 mb-4">
+@foreach (var t in Model)
+{
+    var statusBg = t.CurrentStatus == "Available" ? "bg-success" : t.CurrentStatus == "Assigned" ? "bg-warning text-dark" : t.CurrentStatus == "Busy" ? "bg-danger" : "bg-secondary";
+    <div class="col-md-4">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h6 class="fw-bold mb-1">@t.TeamName</h6>
+                    <span class="badge @statusBg">@t.CurrentStatus</span>
+                </div>
+                <small class="text-muted"><i class="fas fa-tag"></i> @t.TeamType &middot; <i class="fas fa-map-marker-alt"></i> @t.Location?.City</small>
+                <hr class="my-2"/>
+                <small class="fw-semibold">Members (@t.TeamMembers.Count):</small>
+                <ul class="list-unstyled small mb-2 mt-1">
+                @foreach (var m in t.TeamMembers)
+                {
+                    <li><i class="fas fa-user-tag text-muted me-1"></i>@m.FullName — <em>@m.Designation</em></li>
+                }
+                </ul>
+
+                <!-- Actions -->
+                <div class="d-flex gap-1 flex-wrap">
+                    @if (t.CurrentStatus == "Available")
+                    {
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignTeamModal-@t.TeamId">
+                            <i class="fas fa-paper-plane"></i> Assign
+                        </button>
+                    }
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">Status</button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <form asp-action="UpdateTeamStatus" method="post">
+                                    <input type="hidden" name="teamId" value="@t.TeamId" />
+                                    <input type="hidden" name="status" value="Available" />
+                                    <button class="dropdown-item"><i class="fas fa-circle text-success"></i> Available</button>
+                                </form>
+                            </li>
+                            <li>
+                                <form asp-action="UpdateTeamStatus" method="post">
+                                    <input type="hidden" name="teamId" value="@t.TeamId" />
+                                    <input type="hidden" name="status" value="Busy" />
+                                    <button class="dropdown-item"><i class="fas fa-circle text-danger"></i> Busy</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign to Report Modal -->
+    <div class="modal fade" id="assignTeamModal-@t.TeamId" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h6 class="modal-title">Assign @t.TeamName to a Report</h6></div>
+                <form asp-action="AssignToReport" method="post">
+                    <div class="modal-body">
+                        <input type="hidden" name="teamId" value="@t.TeamId" />
+                        <label class="form-label">Select Pending Report</label>
+                        <select name="reportId" class="form-select" required>
+                            <option value="">-- Select Report --</option>
+                            @foreach (var r in ViewBag.PendingReports)
+                            {
+                                <option value="@r.ReportId">#@r.ReportId — @r.Location?.City (@r.SeverityLevel)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary"><i class="fas fa-paper-plane"></i> Assign</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+<!-- Assignments Table  -->
+<div class="card">
+    <div class="card-header bg-white"><i class="fas fa-clipboard-list me-1"></i> Recent Assignments</div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>ID</th><th>Report</th><th>Team</th><th>Assigned By</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+            @foreach (var a in ViewBag.Assignments)
+            {
+                <tr>
+                    <td>#@a.AssignmentId</td>
+                    <td>#@a.ReportId</td>
+                    <td>@a.Team?.TeamName</td>
+                    <td>@a.AssignedByNavigation?.FullName</td>
+                    <td>@a.AssignedTime.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>
+                        <span class="badge @(a.AssignmentStatus == "Completed" ? "bg-success" : a.AssignmentStatus == "On Scene" ? "bg-primary" : a.AssignmentStatus == "En Route" ? "bg-info text-dark" : "bg-secondary")">@a.AssignmentStatus</span>
+                    </td>
+                    <td>
+                        @if (a.AssignmentStatus != "Completed")
+                        {
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">Update</button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <form asp-action="UpdateAssignmentStatus" method="post">
+                                            <input type="hidden" name="assignmentId" value="@a.AssignmentId" />
+                                            <input type="hidden" name="status" value="On Scene" />
+                                            <button class="dropdown-item">On Scene</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form asp-action="UpdateAssignmentStatus" method="post">
+                                            <input type="hidden" name="assignmentId" value="@a.AssignmentId" />
+                                            <input type="hidden" name="status" value="Completed" />
+                                            <button class="dropdown-item">Completed</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

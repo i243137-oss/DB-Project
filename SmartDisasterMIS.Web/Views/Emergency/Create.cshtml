@@ -1,0 +1,78 @@
+@model SmartDisasterMIS.Web.Models.EmergencyReport
+@{
+    ViewData["Title"] = "Report Emergency";
+}
+
+<div class="row pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Report New Emergency</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Disaster Type</label>
+                        <select asp-for="DisasterTypeId" class="form-select" required>
+                            <option value="">-- Select Type --</option>
+                            @foreach(var type in ViewBag.DisasterTypes)
+                            {
+                                <option value="@type.DisasterTypeId">@type.TypeName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Link to Event</label>
+                        <select asp-for="DisasterEventId" class="form-select" required>
+                            <option value="">-- Select Event --</option>
+                            @foreach(var evt in ViewBag.Events)
+                            {
+                                <option value="@evt.DisasterEventId">@evt.EventName (@evt.Status)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Location (City)</label>
+                        <select asp-for="LocationId" class="form-select" required>
+                            <option value="">-- Select Location --</option>
+                            @foreach(var loc in ViewBag.Locations)
+                            {
+                                <option value="@loc.LocationId">@loc.City - @loc.Area</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Severity Level</label>
+                        <select asp-for="SeverityLevel" class="form-select" required>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea asp-for="Description" class="form-control" rows="3" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Citizen Name (Optional)</label>
+                        <input asp-for="CitizenName" class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Citizen Phone (Optional)</label>
+                        <input asp-for="CitizenPhone" class="form-control" />
+                    </div>
+
+                    <button type="submit" class="btn btn-danger w-100">Submit Report</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

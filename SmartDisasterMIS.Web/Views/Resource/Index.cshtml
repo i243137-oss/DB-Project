@@ -1,0 +1,177 @@
+@model IEnumerable<SmartDisasterMIS.Web.Models.Inventory>
+@{
+    ViewData["Title"] = "Resources";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-1"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-cubes me-2 text-primary"></i>Resource Management</h4>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestModal"><i class="fas fa-plus me-1"></i> New Request</button>
+    </div>
+</div>
+
+<!-- Inventory -->
+<div class="card mb-4">
+    <div class="card-header bg-white"><i class="fas fa-boxes-stacked me-1"></i> Warehouse Inventory</div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Warehouse</th><th>Resource</th><th>Available</th><th>Reorder</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+            @foreach (var i in Model)
+            {
+                var isLow = i.QuantityAvailable < i.ReorderLevel;
+                <tr class="@(isLow ? "table-danger" : "")">
+                    <td>@i.Warehouse?.WarehouseName</td>
+                    <td>@i.ResourceType?.ResourceName</td>
+                    <td class="fw-bold">@i.QuantityAvailable</td>
+                    <td>@i.ReorderLevel</td>
+                    <td>
+                        @if (isLow) { <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Low</span> }
+                        else { <span class="badge bg-success">OK</span> }
+                    </td>
+                    <td>
+                        <form asp-action="UpdateStock" method="post" class="d-flex gap-1" style="max-width:160px">
+                            <input type="hidden" name="inventoryId" value="@i.InventoryId" />
+                            <input type="number" name="newQuantity" value="@i.QuantityAvailable" class="form-control form-control-sm" style="width:80px" />
+                            <button class="btn btn-sm btn-outline-primary"><i class="fas fa-save"></i></button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Resource Requests -->
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-hand-holding me-1"></i> Resource Requests</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>#</th><th>Report</th><th>By</th><th>Date</th><th>Items</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+            @foreach (var r in ViewBag.Requests)
+            {
+                <tr>
+                    <td>#@r.RequestId</td>
+                    <td>@(r.Report != null ? "#" + r.ReportId : "N/A")</td>
+                    <td>@r.SubmittedByNavigation?.FullName</td>
+                    <td>@r.RequestDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        @foreach (var d in r.ResourceRequestDetails)
+                        {
+                            <span class="badge bg-light text-dark me-1">@d.ResourceType?.ResourceName x@d.QuantityRequested</span>
+                        }
+                    </td>
+                    <td>
+                        <span class="badge @(r.Status == "Fulfilled" ? "bg-success" : r.Status == "Approved" ? "bg-info" : r.Status == "Pending" ? "bg-warning text-dark" : "bg-secondary")">@r.Status</span>
+                    </td>
+                    <td>
+                        @if (r.Status == "Pending")
+                        {
+                            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#dispatchModal-@r.RequestId">
+                                <i class="fas fa-truck"></i> Dispatch
+                            </button>
+
+                            <!-- Dispatch Modal -->
+                            <div class="modal fade" id="dispatchModal-@r.RequestId" tabindex="-1">
+                                <div class="modal-dialog modal-sm">
+                                    <div class="modal-content">
+                                        <div class="modal-header"><h6 class="modal-title">Dispatch for Request #@r.RequestId</h6></div>
+                                        <form asp-action="DispatchResource" method="post">
+                                            <div class="modal-body">
+                                                <input type="hidden" name="requestId" value="@r.RequestId" />
+                                                <label class="form-label">From Warehouse</label>
+                                                <select name="warehouseId" class="form-select" required>
+                                                    @foreach (var w in ViewBag.Warehouses)
+                                                    {
+                                                        <option value="@w.WarehouseId">@w.WarehouseName</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button class="btn btn-success w-100"><i class="fas fa-truck"></i> Dispatch Now</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Dispatches -->
+<div class="card">
+    <div class="card-header bg-white"><i class="fas fa-truck me-1"></i> Dispatches</div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>#</th><th>Warehouse</th><th>Approved By</th><th>Date</th><th>Status</th></tr></thead>
+            <tbody>
+            @foreach (var d in ViewBag.Dispatches)
+            {
+                <tr>
+                    <td>#@d.DispatchId</td>
+                    <td>@d.Warehouse?.WarehouseName</td>
+                    <td>@d.ApprovedByNavigation?.FullName</td>
+                    <td>@d.DispatchDate.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td><span class="badge @(d.Status == "Delivered" ? "bg-success" : d.Status == "Dispatched" ? "bg-primary" : "bg-secondary")">@d.Status</span></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- New Request Modal -->
+<div class="modal fade" id="requestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Create Resource Request</h5></div>
+            <form asp-action="CreateRequest" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">For Emergency Report</label>
+                        <select name="reportId" class="form-select" required>
+                            <option value="">-- Select Report --</option>
+                            @foreach (var r in ViewBag.PendingReports)
+                            {
+                                <option value="@r.ReportId">#@r.ReportId — @r.Status</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Resource Type</label>
+                        <select name="resourceTypeId" class="form-select" required>
+                            @foreach (var rt in ViewBag.ResourceTypes)
+                            {
+                                <option value="@rt.ResourceTypeId">@rt.ResourceName (@rt.Unit)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" name="quantity" class="form-control" min="1" value="10" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary w-100"><i class="fas fa-paper-plane"></i> Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

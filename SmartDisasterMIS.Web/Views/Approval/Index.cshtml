@@ -1,0 +1,66 @@
+@model IEnumerable<SmartDisasterMIS.Web.Models.ApprovalRequest>
+@{
+    ViewData["Title"] = "Approvals";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-clipboard-check me-2 text-primary"></i>Approval Workflow</h4>
+</div>
+
+<div class="card">
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Type</th>
+                    <th>Ref ID</th>
+                    <th>Submitted By</th>
+                    <th>Submitted At</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                    <th>Decision</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var a in Model)
+            {
+                <tr>
+                    <td>@a.ApprovalId</td>
+                    <td>@a.RequestType</td>
+                    <td>@a.ReferenceId</td>
+                    <td>@a.SubmittedByNavigation?.FullName</td>
+                    <td>@a.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>
+                        <span class="badge @(a.Status == "Approved" ? "bg-success" : a.Status == "Rejected" ? "bg-danger" : "bg-warning text-dark")">@a.Status</span>
+                    </td>
+                    <td>@(a.Remarks ?? "—")</td>
+                    <td>@(a.DecisionAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                    <td>
+                        @if (a.Status == "Pending")
+                        {
+                            <form asp-action="Decide" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="@a.ApprovalId" />
+                                <input type="hidden" name="decision" value="Approved" />
+                                <input type="hidden" name="remarks" value="Approved via MIS" />
+                                <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
+                            </form>
+                            <form asp-action="Decide" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="@a.ApprovalId" />
+                                <input type="hidden" name="decision" value="Rejected" />
+                                <input type="hidden" name="remarks" value="Rejected via MIS" />
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">Done</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
